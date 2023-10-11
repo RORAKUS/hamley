@@ -1,0 +1,15 @@
+### Folders
+.idea/
+out/
+target/
+attachments/
+logs/
+test/
+
+# Files
+*.iml
+*.jar
+config.json
+db.json
+messages.json
+todo.txt
