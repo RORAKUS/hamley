@@ -7,10 +7,7 @@ import codes.rorak.hamley.util.Config.config
 import codes.rorak.hamley.util.Config.db
 import codes.rorak.hamley.util.Config.messages
 import codes.rorak.hamley.util.Config.saveDb
-import net.dv8tion.jda.api.entities.Member
-import net.dv8tion.jda.api.entities.Message
-import net.dv8tion.jda.api.entities.User
-import net.dv8tion.jda.api.entities.UserSnowflake
+import net.dv8tion.jda.api.entities.*
 import net.dv8tion.jda.api.entities.emoji.Emoji
 import net.dv8tion.jda.api.exceptions.ErrorResponseException
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
@@ -24,6 +21,7 @@ object Automod {
     }
 
     fun loadRoleSelects() {
+        val memberEdits = mutableMapOf<Member, Pair<MutableSet<Role>, MutableSet<Role>>>();
         db.roleSelects.forEach { rs ->
             val embed = rs.message.toMessageEmbed(append = "\n\n" + rs.roles.entries.joinToString("\n") { o -> "${o.value} - ${o.key.toRole().asMention}" });
 
@@ -40,18 +38,35 @@ object Automod {
             rs.messageId = msg?.idLong;
 
             // check roles
-            msg?.reactions?.forEach { r ->
-                val role = rs.roles.entries.find { it.value == r.emoji.name }?.key?.toRole() ?: return;
+            val reactionMap = msg?.reactions?.mapNotNull { r ->
+                val role = rs.roles.entries.find { it.value == r.emoji.name }?.key?.toRole() ?: return@mapNotNull null;
                 val reactionUsers = r.retrieveUsers().complete().filterNot { it.isBot }.map(User::getId);
-                bot.guild.findMembersWithRoles(role).onSuccess { usersWithRole ->
-                    // if IN role AND NOT IN reaction --> remove role
-                    usersWithRole.filter { it.id !in reactionUsers }
-                        .forEach { bot.guild.removeRoleFromMember(it, role).reason("Autorole post-select").queue(); };
-                    // if IN reaction AND NOT IN role --> add role
-                    reactionUsers.filter { it !in usersWithRole.map(Member::getId) }
-                        .forEach { bot.guild.addRoleToMember(UserSnowflake.fromId(it), role).reason("Autorole post-select").queue(); };
-                };
+                role to reactionUsers;
             };
+            bot.guild.loadMembers { m ->
+                val addRoles = mutableSetOf<Role>();
+                val removeRoles = mutableSetOf<Role>();
+                reactionMap?.forEach { (role, reactionUsers) ->
+                    // if IN role AND NOT IN reaction --> remove role
+                    if (role in m.roles && m.id !in reactionUsers)
+                        removeRoles.add(role);
+                    // if IN reaction AND NOT IN role --> add role
+                    if (m.id in reactionUsers && role !in m.roles)
+                        addRoles.add(role);
+                };
+                if (addRoles.isNotEmpty() || removeRoles.isNotEmpty()) {
+                    if (m !in memberEdits)
+                        memberEdits[m] = addRoles to removeRoles;
+                    else {
+                        memberEdits[m]?.first?.addAll(addRoles);
+                        memberEdits[m]?.second?.addAll(removeRoles);
+                    }
+                }
+            };
+
+        };
+        memberEdits.forEach { (member, roleChanges) ->
+            bot.guild.modifyMemberRoles(member, roleChanges.first, roleChanges.second).reason("Autorole post-select").queue();
         };
         saveDb();
     }

@@ -41,7 +41,8 @@ class ConfigModel {
     data class Reporting(
         val channel: Long,
         val email: ImapEmail,
-        val filters: ReportingFilters
+        val filters: ReportingFilters,
+        val pdfPK: String
     );
 
     data class Automod(
