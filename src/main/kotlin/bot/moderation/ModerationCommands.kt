@@ -113,6 +113,7 @@ object ModerationCommands: InteractionListener {
         event.hook.sendMessage(messages.constants.embedSuccessfullySent).queueAndDel();
     }
 
+    @Suppress("FunctionName")
     @SlashCommand("Upraví embed zprávu")
     fun edit_embed(
         @Option("Id zprávy, kterou chceš upravit. (google: How to copy discord message id?)", true) message_id: String,

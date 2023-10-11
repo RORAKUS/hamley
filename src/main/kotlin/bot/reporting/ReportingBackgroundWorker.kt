@@ -3,7 +3,6 @@ package codes.rorak.hamley.bot.reporting
 import codes.rorak.hamley.util.Config.config
 import codes.rorak.hamley.util.warn
 import com.sun.mail.imap.IMAPFolder
-import com.sun.mail.imap.IMAPStore
 import jakarta.mail.Folder
 
 class ReportingBackgroundWorker(private val imapFolder: IMAPFolder): Runnable {
