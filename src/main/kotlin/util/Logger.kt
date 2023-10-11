@@ -48,7 +48,7 @@ fun error(ex: Throwable): Nothing {
     except(ex);
     exitProcess(1);
 }
-fun debug(message: String, depth: Int = 0) = with(Thread.currentThread().stackTrace[2+depth]) {
+fun debug(message: String, depth: Int = 0) = with(Thread.currentThread().stackTrace[3+depth]) {
     if (debug) msg(true, "[$className.$methodName:$lineNumber] $message", "DEBUG");
 };
 // endregion
