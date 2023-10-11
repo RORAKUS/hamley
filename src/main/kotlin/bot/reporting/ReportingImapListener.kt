@@ -5,6 +5,7 @@ import codes.rorak.hamley.util.Config.config
 import codes.rorak.hamley.util.Config.messages
 import jakarta.mail.Message
 import net.dv8tion.jda.api.utils.FileUpload
+import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -25,13 +26,17 @@ object ReportingImapListener {
             else -> return;
         };
 
-        val file = msg.downloadAttachment(Config.ATTACHMENT_FOLDER) ?: return;
+        val pdfFile = msg.downloadAttachment(Config.ATTACHMENT_FOLDER) ?: return;
+
+        // convert to images
+        val jpgs = PdfConverter.convert(pdfFile) ?: listOf(pdfFile);
 
         config.reporting.channel.toTextChannel()
             .sendMessageEmbeds(embed)
-            .addFiles(FileUpload.fromData(file))
+            .addFiles(jpgs.map { FileUpload.fromData(it) })
             .complete();
 
-        file.delete();
+        pdfFile.delete();
+        jpgs.forEach(File::delete);
     }
 }

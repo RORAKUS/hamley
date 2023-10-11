@@ -11,10 +11,10 @@ build() {
 }
 run() {
   if [ -z "$JAVA19_HOME" ]; then
-        java -jar hamley.jar
+        java --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED -jar hamley.jar debug
         procid=$!
     else
-        "$JAVA19_HOME"/java -jar hamley.jar
+        "$JAVA19_HOME"/java --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED -jar hamley.jar debug
         procid=$!
     fi
 }
